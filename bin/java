@@ -4,11 +4,13 @@ LATEST_JDK_VERSION="1.8"
 DEFAULT_JDK_VERSION="1.8"
 DEFAULT_JDK_BASE_URL="https://lang-jvm.s3.amazonaws.com/jdk/${STACK:-"heroku-16"}"
 JDK_BASE_URL=${JDK_BASE_URL:-$DEFAULT_JDK_BASE_URL}
-JDK_URL_11=${JDK_URL_11:-"$JDK_BASE_URL/openjdk11.0.2.tar.gz"}
+JDK_URL_13=${JDK_URL_13:-"$JDK_BASE_URL/openjdk13.0.0.tar.gz"}
+JDK_URL_12=${JDK_URL_12:-"$JDK_BASE_URL/openjdk12.0.2.tar.gz"}
+JDK_URL_11=${JDK_URL_11:-"$JDK_BASE_URL/openjdk11.0.4.tar.gz"}
 JDK_URL_10=${JDK_URL_10:-"$JDK_BASE_URL/openjdk10.0.2.tar.gz"}
 JDK_URL_1_9=${JDK_URL_1_9:-"$JDK_BASE_URL/openjdk9.0.4.tar.gz"}
-JDK_URL_1_8=${JDK_URL_1_8:-"$JDK_BASE_URL/openjdk1.8.0_201.tar.gz"}
-JDK_URL_1_7=${JDK_URL_1_7:-"$JDK_BASE_URL/openjdk1.7.0_201.tar.gz"}
+JDK_URL_1_8=${JDK_URL_1_8:-"$JDK_BASE_URL/openjdk1.8.0_222.tar.gz"}
+JDK_URL_1_7=${JDK_URL_1_7:-"$JDK_BASE_URL/openjdk1.7.0_232.tar.gz"}
 JDK_URL_1_6=${JDK_URL_1_6:-"https://lang-jvm.s3.amazonaws.com/jdk/openjdk1.6.0_27.tar.gz"}
 
 install_java_with_overlay() {
@@ -138,7 +140,11 @@ _get_jdk_download_url() {
     local jdkUrl="${JDK_URL_10}"
   elif [ "${jdkVersion}" = "11" ]; then
     local jdkUrl="${JDK_URL_11}"
-  elif [ "$(expr "${jdkVersion}" : '^1[0-1]')" != 0 ]; then
+  elif [ "${jdkVersion}" = "12" ]; then
+    local jdkUrl="${JDK_URL_12}"
+  elif [ "${jdkVersion}" = "13" ]; then
+    local jdkUrl="${JDK_URL_13}"
+  elif [ "$(expr "${jdkVersion}" : '^1[0-3]')" != 0 ]; then
     local jdkUrl="${JDK_BASE_URL}/openjdk${jdkVersion}.tar.gz"
   elif [ "$(expr "${jdkVersion}" : '^1.[6-9]$')" != 0 ]; then
     local minorJdkVersion=$(expr "${jdkVersion}" : '1.\([6-9]\)')
@@ -252,7 +258,7 @@ _install_pgconfig() {
   local javaHome=${1:-JAVA_HOME}
   local extDir="${javaHome}/jre/lib/ext"
 
-  if [ -d "${extDir}" ] && [ -z "${SKIP_PGCONFIG_INSTALL:-}"  ]; then
+  if [ -d "${extDir}" ] && [ -z "${SKIP_PGCONFIG_INSTALL:-}"  ] && [ "${CI:-}" != "true" ]; then
     curl --retry 3 -s -L "https://lang-jvm.s3.amazonaws.com/pgconfig.jar" -o ${extDir}/pgconfig.jar
   fi
 }
@@ -281,7 +287,7 @@ _install_metrics_agent() {
 
   mkdir -p ${binDir}
   curl --retry 3 -s -o ${agent_jar} \
-      -L ${HEROKU_METRICS_JAR_URL:-"https://repo1.maven.org/maven2/com/heroku/agent/heroku-java-metrics-agent/3.10/heroku-java-metrics-agent-3.10.jar"}
+      -L ${HEROKU_METRICS_JAR_URL:-"https://repo1.maven.org/maven2/com/heroku/agent/heroku-java-metrics-agent/3.11/heroku-java-metrics-agent-3.11.jar"}
   [ ! -f ${agent_jar} ] && warning_inline "failed to install metrics agent!"
 
   mkdir -p ${ctxDir}/.profile.d
@@ -296,5 +302,7 @@ _cache_version() {
   local jdkVersion="${1}"
   local cacheDir="${2}"
 
-  echo "java.runtime.version=${jdkVersion}" > "${cacheDir}/system.properties"
+  if [ -d "${cacheDir}" ]; then
+    echo "java.runtime.version=${jdkVersion}" > "${cacheDir}/system.properties"
+  fi
 }

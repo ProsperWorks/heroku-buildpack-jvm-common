@@ -2,6 +2,23 @@
 
 ## master
 
+* Add support for JDK 13
+
+## v84
+
+* Update default JDK 7, 8, 11, and 12
+* Prevent pgconfig jar from installing in CI
+
+## v83
+
+* Disable postgres sslmode when running in CI
+
+## v82
+
+* Update heroku-java-metrics-agent to 3.11
+
+## v80
+
 * Changed default JDK 7 to 7u201
 * Changed default JDK 11 to 11.0.2
 * Changed default JDK 8 to 8u201
